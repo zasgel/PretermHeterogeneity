@@ -1,0 +1,498 @@
+*SPARK_final Pre-imputation QC
+
+*Directory
+cd /sc/arion/projects/funEpi/Hara/SPARK_final
+
+*LSF: PREQC1_all
+plink \
+--bfile /sc/arion/projects/funEpi/Hara/SPARK_final/data/plink/SPARK.iWES_v2.genotyping_array \
+--chr 1-23 \
+--make-bed \
+--out /sc/arion/projects/funEpi/Hara/SPARK_final/results/iWES_QC1
+
+
+
+plink \
+--bfile /sc/arion/projects/funEpi/Hara/SPARK_final/results/iWES_QC1 \
+--missing \
+--out /sc/arion/projects/funEpi/Hara/SPARK_final/results/iWES_QC1_miss
+
+plink \
+--bfile /sc/arion/projects/funEpi/Hara/SPARK_final/results/iWES_QC1 \
+--geno 0.1 \
+--make-bed \
+--out /sc/arion/projects/funEpi/Hara/SPARK_final/results/iWES_QC1_geno1
+
+*LSF: PREQC2_all
+
+plink --bfile iWES_QC1_geno1 --missing --out iWESQC1_geno1_m
+plink --bfile iWES_QC1_geno1 --het --out iWESQC1_geno1_h
+plink --bfile iWES_QC1_geno1 --mind 0.1 --make-bed --out iWESQC2
+*2 people removed
+
+*LSF: PREQC3_all
+
+plink --bfile iWESQC2 --check-sex --out iWESQC2.sexcheck
+*there are 200 individuals for who their sex will be imputed
+
+*interactive
+grep "PROBLEM" iWESQC2.sexcheck.sexcheck | awk '{print$1,$2}'> sex_discrepancy_iWES.txt
+
+plink --bfile iWESQC2 --remove sex_discrepancy_iWES.txt --make-bed --out iWESQC3
+
+
+
+
+*LSF: PREQC4_all
+
+plink --bfile iWESQC3 --geno 0.02 --maf 0.01 --make-bed --out iWESQC4
+
+plink --bfile iWESQC4 --keep premature_cc.txt --make-bed --out iWESQC5
+
+plink --bfile iWESQC5 --make-pheno premature_cases.txt '*' --make-bed --out iWESQC6
+
+plink --bfile iWESQC5 --make-pheno hypoxia_cases.txt '*' --make-bed --out iWESQC6_hyp
+
+
+
+plink \
+--bfile iWESQC6 \
+--chr 1-22 \
+--make-bed \
+--out iWESQC6a
+
+plink --bfile iWESQC6a --hwe 0.000001 --make-bed --out iWESQC7
+
+plink --bfile iWESQC7 --hwe 1e-10 --hwe-all --make-bed --out iWESQC7a
+
+
+*LSF: PREQC5_all
+plink --bfile iWESQC7a --indep-pairwise 50 5 0.2 --out iWESQC7prune
+plink --bfile iWESQC7a --extract iWESQC7prune.prune.in --het --out /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1_QC8
+
+*interactive
+plink --bfile iWESQC7a --remove fail-het-qc.txt --make-bed --out iWESQC8i
+*1362 ind removed
+
+plink --bfile iWESQC8i --extract iWESQC7prune.prune.in --genome --min 0.2 --out pihat_min0.2
+awk '{ if ($8 >0.9) print $0 }' pihat_min0.2.genome>zoom_pihat.genome
+
+
+plink --bfile iWESQC8i --remove  related_cc.txt --make-bed --out WES1QC9
+
+
+plink --bfile WES1QC9 --genome --min 0.2 --out WES1QC9
+awk '{ if ($8 >0.9) print $0 }' WES1QC9.genome>zoom_pihat2.genome
+
+plink --bfile WES1QC9 --remove  related_cc2.txt --make-bed --out WES1QC10
+
+plink --bfile WES1QC10 --pca
+
+*first sample
+plink --bfile WES1QC10 --remove  WESall2.txt --make-bed --out WES1QC11
+plink --bfile WES1QC11 --output-chr chrMT --make-bed --out WES1QC11_new
+
+plink --freq --bfile  WES1QC11_new  --out  WES1QC11_freq
+
+*Second sample
+
+plink --bfile WES1QC10 --remove  WESall1.txt --make-bed --out WES1QC12
+
+plink --bfile WES1QC12 --output-chr chrMT --make-bed --out WES1QC12_new
+
+plink --freq --bfile  WES1QC12_new  --out  WES1QC12_freq
+
+*prepare data for Michigan imputation server
+bcftools view bravo-dbsnp-all.vcf.gz -Ov -o ALL.TOPMed_freeze5_hg38_dbSNP.vcf
+
+./CreateTOPMed.pl -i ALL.TOPMed_freeze5_hg38_dbSNP.vcf  
+ml perl5/5.36.0.p
+perl HRC-1000G-check-bim.pl  -b WES1QC11_new.bim -f WES1QC11_freq.frq -r PASS.Variants.TOPMed_freeze5_hg38_dbSNP.tab.gz -h 
+
+
+
+
+plink --bfile WES1QC11_new --update-map Chromosome-WES1QC11_new-HRC.txt --update-chr --make-bed --out WES1QC11_check
+plink --bfile WES1QC11_check --update-map Position-WES1QC11_new-HRC.txt --make-bed --out WES1QC11_check1
+plink --bfile WES1QC11_check1 --flip Strand-Flip-WES1QC11_new-HRC.txt --make-bed --out WES1QC11_check2
+plink --bfile WES1QC11_check2 --a2-allele Force-Allele1-WES1QC11_new-HRC.txt --make-bed --out WES1QC11_check3
+
+plink --bfile WES1QC11_check3 --chr 1 --make-bed --out chr1alldata1
+plink --bfile WES1QC11_check3 --chr 2 --make-bed --out chr2alldata1
+plink --bfile WES1QC11_check3 --chr 3 --make-bed --out chr3alldata1
+plink --bfile WES1QC11_check3 --chr 4 --make-bed --out chr4alldata1
+plink --bfile WES1QC11_check3 --chr 5 --make-bed --out chr5alldata1
+plink --bfile WES1QC11_check3 --chr 6 --make-bed --out chr6alldata1
+plink --bfile WES1QC11_check3 --chr 7 --make-bed --out chr7alldata1
+plink --bfile WES1QC11_check3 --chr 8 --make-bed --out chr8alldata1
+plink --bfile WES1QC11_check3 --chr 9 --make-bed --out chr9alldata1
+plink --bfile WES1QC11_check3 --chr 10 --make-bed --out chr10alldata1
+plink --bfile WES1QC11_check3 --chr 11 --make-bed --out chr11alldata1
+plink --bfile WES1QC11_check3 --chr 12 --make-bed --out chr12alldata1
+plink --bfile WES1QC11_check3 --chr 13 --make-bed --out chr13alldata1
+plink --bfile WES1QC11_check3 --chr 14 --make-bed --out chr14alldata1
+plink --bfile WES1QC11_check3 --chr 15 --make-bed --out chr15alldata1
+plink --bfile WES1QC11_check3 --chr 16 --make-bed --out chr16alldata1
+plink --bfile WES1QC11_check3 --chr 17 --make-bed --out chr17alldata1
+plink --bfile WES1QC11_check3 --chr 18 --make-bed --out chr18alldata1
+plink --bfile WES1QC11_check3 --chr 19 --make-bed --out chr19alldata1
+plink --bfile WES1QC11_check3 --chr 20 --make-bed --out chr20alldata1
+plink --bfile WES1QC11_check3 --chr 21 --make-bed --out chr21alldata1
+plink --bfile WES1QC11_check3 --chr 22 --make-bed --out chr22alldata1
+
+
+*.ped .fam files
+plink --bfile chr1alldata1 --output-chr chrMT --recode --tab --out chr1alldatareorder1
+plink --bfile chr2alldata1 --output-chr chrMT --recode --tab --out chr2alldatareorder1
+plink --bfile chr3alldata1 --output-chr chrMT --recode --tab --out chr3alldatareorder1
+plink --bfile chr4alldata1 --output-chr chrMT --recode --tab --out chr4alldatareorder1
+plink --bfile chr5alldata1 --output-chr chrMT --recode --tab --out chr5alldatareorder1
+plink --bfile chr6alldata1 --output-chr chrMT --recode --tab --out chr6alldatareorder1
+plink --bfile chr7alldata1 --output-chr chrMT --recode --tab --out chr7alldatareorder1
+plink --bfile chr8alldata1 --output-chr chrMT --recode --tab --out chr8alldatareorder1
+plink --bfile chr9alldata1 --output-chr chrMT --recode --tab --out chr9alldatareorder1
+plink --bfile chr10alldata1 --output-chr chrMT --recode --tab --out chr10alldatareorder1
+plink --bfile chr11alldata1 --output-chr chrMT --recode --tab --out chr11alldatareorder1
+plink --bfile chr12alldata1 --output-chr chrMT --recode --tab --out chr12alldatareorder1
+plink --bfile chr13alldata1 --output-chr chrMT --recode --tab --out chr13alldatareorder1
+plink --bfile chr14alldata1 --output-chr chrMT --recode --tab --out chr14alldatareorder1
+plink --bfile chr15alldata1 --output-chr chrMT --recode --tab --out chr15alldatareorder1
+plink --bfile chr16alldata1 --output-chr chrMT --recode --tab --out chr16alldatareorder1
+plink --bfile chr17alldata1 --output-chr chrMT --recode --tab --out chr17alldatareorder1
+plink --bfile chr18alldata1 --output-chr chrMT --recode --tab --out chr18alldatareorder1
+plink --bfile chr19alldata1 --output-chr chrMT --recode --tab --out chr19alldatareorder1
+plink --bfile chr20alldata1 --output-chr chrMT --recode --tab --out chr20alldatareorder1
+plink --bfile chr21alldata1 --output-chr chrMT --recode --tab --out chr21alldatareorder1
+plink --bfile chr22alldata1 --output-chr chrMT --recode --tab --out chr22alldatareorder1
+
+*convert to vcf
+
+plink --ped chr1alldatareorder1.ped --map chr1alldatareorder1.map --output-chr chrMT --recode vcf --out chr1allreorder1
+
+plink --ped chr2alldatareorder1.ped --map chr2alldatareorder1.map --output-chr chrMT --recode vcf --out chr2allreorder1
+plink --ped chr3alldatareorder1.ped --map chr3alldatareorder1.map --output-chr chrMT --recode vcf --out chr3allreorder1
+plink --ped chr4alldatareorder1.ped --map chr4alldatareorder1.map --output-chr chrMT --recode vcf --out chr4allreorder1
+
+plink --ped chr5alldatareorder1.ped --map chr5alldatareorder1.map --output-chr chrMT --recode vcf --out chr5allreorder1
+plink --ped chr6alldatareorder1.ped --map chr6alldatareorder1.map --output-chr chrMT --recode vcf --out chr6allreorder1
+plink --ped chr7alldatareorder1.ped --map chr7alldatareorder1.map --output-chr chrMT --recode vcf --out chr7allreorder1
+plink --ped chr8alldatareorder1.ped --map chr8alldatareorder1.map --output-chr chrMT --recode vcf --out chr8allreorder1
+plink --ped chr9alldatareorder1.ped --map chr9alldatareorder1.map --output-chr chrMT --recode vcf --out chr9allreorder1
+plink --ped chr10alldatareorder1.ped --map chr10alldatareorder1.map --output-chr chrMT --recode vcf --out chr10allreorder1
+plink --ped chr11alldatareorder1.ped --map chr11alldatareorder1.map --output-chr chrMT --recode vcf --out chr11allreorder1
+plink --ped chr12alldatareorder1.ped --map chr12alldatareorder1.map --output-chr chrMT --recode vcf --out chr12allreorder1
+plink --ped chr13alldatareorder1.ped --map chr13alldatareorder1.map --output-chr chrMT --recode vcf --out chr13allreorder1
+plink --ped chr14alldatareorder1.ped --map chr14alldatareorder1.map --output-chr chrMT --recode vcf --out chr14allreorder1
+plink --ped chr15alldatareorder1.ped --map chr15alldatareorder1.map --output-chr chrMT --recode vcf --out chr15allreorder1
+plink --ped chr16alldatareorder1.ped --map chr16alldatareorder1.map --output-chr chrMT --recode vcf --out chr16allreorder1
+plink --ped chr17alldatareorder1.ped --map chr17alldatareorder1.map --output-chr chrMT --recode vcf --out chr17allreorder1
+plink --ped chr18alldatareorder1.ped --map chr18alldatareorder1.map --output-chr chrMT --recode vcf --out chr18allreorder1
+plink --ped chr19alldatareorder1.ped --map chr19alldatareorder1.map --output-chr chrMT --recode vcf --out chr19allreorder1
+plink --ped chr20alldatareorder1.ped --map chr20alldatareorder1.map --output-chr chrMT --recode vcf --out chr20allreorder1
+plink --ped chr21alldatareorder1.ped --map chr21alldatareorder1.map --output-chr chrMT --recode vcf --out chr21allreorder1
+plink --ped chr22alldatareorder1.ped --map chr22alldatareorder1.map --output-chr chrMT --recode vcf --out chr22allreorder1
+
+*gzip files
+
+bcftools sort chr1allreorder1.vcf -Oz -o chr1allreorder1.vcf.gz
+bcftools sort chr2allreorder1.vcf -Oz -o chr2allreorder1.vcf.gz
+bcftools sort chr3allreorder1.vcf -Oz -o chr3allreorder1.vcf.gz
+bcftools sort chr4allreorder1.vcf -Oz -o chr4allreorder1.vcf.gz
+bcftools sort chr5allreorder1.vcf -Oz -o chr5allreorder1.vcf.gz
+bcftools sort chr6allreorder1.vcf -Oz -o chr6allreorder1.vcf.gz
+bcftools sort chr7allreorder1.vcf -Oz -o chr7allreorder1.vcf.gz
+bcftools sort chr8allreorder1.vcf -Oz -o chr8allreorder1.vcf.gz
+bcftools sort chr9allreorder1.vcf -Oz -o chr9allreorder1.vcf.gz
+bcftools sort chr10allreorder1.vcf -Oz -o chr10allreorder1.vcf.gz
+bcftools sort chr11allreorder1.vcf -Oz -o chr11allreorder1.vcf.gz
+bcftools sort chr12allreorder1.vcf -Oz -o chr12allreorder1.vcf.gz
+bcftools sort chr13allreorder1.vcf -Oz -o chr13allreorder1.vcf.gz
+bcftools sort chr14allreorder1.vcf -Oz -o chr14allreorder1.vcf.gz
+bcftools sort chr15allreorder1.vcf -Oz -o chr15allreorder1.vcf.gz
+bcftools sort chr16allreorder1.vcf -Oz -o chr16allreorder1.vcf.gz
+bcftools sort chr17allreorder1.vcf -Oz -o chr17allreorder1.vcf.gz
+bcftools sort chr18allreorder1.vcf -Oz -o chr18allreorder1.vcf.gz
+bcftools sort chr19allreorder1.vcf -Oz -o chr19allreorder1.vcf.gz
+bcftools sort chr20allreorder1.vcf -Oz -o chr20allreorder1.vcf.gz
+bcftools sort chr21allreorder1.vcf -Oz -o chr21allreorder1.vcf.gz
+bcftools sort chr22allreorder1.vcf -Oz -o chr22allreorder1.vcf.gz
+
+
+perl HRC-1000G-check-bim.pl  -b WES1QC12_new.bim -f WES1QC12_freq.frq -r PASS.Variants.TOPMed_freeze5_hg38_dbSNP.tab.gz -h 
+
+plink --bfile WES1QC12_new --update-map Chromosome-WES1QC12_new-HRC.txt --update-chr --make-bed --out WES1QC12_check
+plink --bfile WES1QC12_check --update-map Position-WES1QC12_new-HRC.txt --make-bed --out WES1QC12_check1
+plink --bfile WES1QC12_check1 --flip Strand-Flip-WES1QC12_new-HRC.txt --make-bed --out WES1QC12_check2
+plink --bfile WES1QC12_check2 --a2-allele Force-Allele1-WES1QC12_new-HRC.txt --make-bed --out WES1QC12_check3
+
+plink --bfile WES1QC12_check3 --chr 1 --make-bed --out chr1alldata
+plink --bfile WES1QC12_check3 --chr 2 --make-bed --out chr2alldata
+plink --bfile WES1QC12_check3 --chr 3 --make-bed --out chr3alldata
+plink --bfile WES1QC12_check3 --chr 4 --make-bed --out chr4alldata
+plink --bfile WES1QC12_check3 --chr 5 --make-bed --out chr5alldata
+plink --bfile WES1QC12_check3 --chr 6 --make-bed --out chr6alldata
+plink --bfile WES1QC12_check3 --chr 7 --make-bed --out chr7alldata
+plink --bfile WES1QC12_check3 --chr 8 --make-bed --out chr8alldata
+plink --bfile WES1QC12_check3 --chr 9 --make-bed --out chr9alldata
+plink --bfile WES1QC12_check3 --chr 10 --make-bed --out chr10alldata
+plink --bfile WES1QC12_check3 --chr 11 --make-bed --out chr11alldata
+plink --bfile WES1QC12_check3 --chr 12 --make-bed --out chr12alldata
+plink --bfile WES1QC12_check3 --chr 13 --make-bed --out chr13alldata
+plink --bfile WES1QC12_check3 --chr 14 --make-bed --out chr14alldata
+plink --bfile WES1QC12_check3 --chr 15 --make-bed --out chr15alldata
+plink --bfile WES1QC12_check3 --chr 16 --make-bed --out chr16alldata
+plink --bfile WES1QC12_check3 --chr 17 --make-bed --out chr17alldata
+plink --bfile WES1QC12_check3 --chr 18 --make-bed --out chr18alldata
+plink --bfile WES1QC12_check3 --chr 19 --make-bed --out chr19alldata
+plink --bfile WES1QC12_check3 --chr 20 --make-bed --out chr20alldata
+plink --bfile WES1QC12_check3 --chr 21 --make-bed --out chr21alldata
+plink --bfile WES1QC12_check3 --chr 22 --make-bed --out chr22alldata
+
+
+*.ped .fam files
+plink --bfile chr1alldata --output-chr chrMT --recode --tab --out chr1alldatareorder
+plink --bfile chr2alldata --output-chr chrMT --recode --tab --out chr2alldatareorder
+plink --bfile chr3alldata --output-chr chrMT --recode --tab --out chr3alldatareorder
+plink --bfile chr4alldata --output-chr chrMT --recode --tab --out chr4alldatareorder
+plink --bfile chr5alldata --output-chr chrMT --recode --tab --out chr5alldatareorder
+plink --bfile chr6alldata --output-chr chrMT --recode --tab --out chr6alldatareorder
+plink --bfile chr7alldata --output-chr chrMT --recode --tab --out chr7alldatareorder
+plink --bfile chr8alldata --output-chr chrMT --recode --tab --out chr8alldatareorder
+plink --bfile chr9alldata --output-chr chrMT --recode --tab --out chr9alldatareorder
+plink --bfile chr10alldata --output-chr chrMT --recode --tab --out chr10alldatareorder
+plink --bfile chr11alldata --output-chr chrMT --recode --tab --out chr11alldatareorder
+plink --bfile chr12alldata --output-chr chrMT --recode --tab --out chr12alldatareorder
+plink --bfile chr13alldata --output-chr chrMT --recode --tab --out chr13alldatareorder
+plink --bfile chr14alldata --output-chr chrMT --recode --tab --out chr14alldatareorder
+plink --bfile chr15alldata --output-chr chrMT --recode --tab --out chr15alldatareorder
+plink --bfile chr16alldata --output-chr chrMT --recode --tab --out chr16alldatareorder
+plink --bfile chr17alldata --output-chr chrMT --recode --tab --out chr17alldatareorder
+plink --bfile chr18alldata --output-chr chrMT --recode --tab --out chr18alldatareorder
+plink --bfile chr19alldata --output-chr chrMT --recode --tab --out chr19alldatareorder
+plink --bfile chr20alldata --output-chr chrMT --recode --tab --out chr20alldatareorder
+plink --bfile chr21alldata --output-chr chrMT --recode --tab --out chr21alldatareorder
+plink --bfile chr22alldata --output-chr chrMT --recode --tab --out chr22alldatareorder
+
+*convert to vcf
+
+plink --ped chr1alldatareorder.ped --map chr1alldatareorder.map --output-chr chrMT --recode vcf --out chr1allreorder
+
+plink --ped chr2alldatareorder.ped --map chr2alldatareorder.map --output-chr chrMT --recode vcf --out chr2allreorder
+plink --ped chr3alldatareorder.ped --map chr3alldatareorder.map --output-chr chrMT --recode vcf --out chr3allreorder
+plink --ped chr4alldatareorder.ped --map chr4alldatareorder.map --output-chr chrMT --recode vcf --out chr4allreorder
+
+plink --ped chr5alldatareorder.ped --map chr5alldatareorder.map --output-chr chrMT --recode vcf --out chr5allreorder
+plink --ped chr6alldatareorder.ped --map chr6alldatareorder.map --output-chr chrMT --recode vcf --out chr6allreorder
+plink --ped chr7alldatareorder.ped --map chr7alldatareorder.map --output-chr chrMT --recode vcf --out chr7allreorder
+plink --ped chr8alldatareorder.ped --map chr8alldatareorder.map --output-chr chrMT --recode vcf --out chr8allreorder
+plink --ped chr9alldatareorder.ped --map chr9alldatareorder.map --output-chr chrMT --recode vcf --out chr9allreorder
+plink --ped chr10alldatareorder.ped --map chr10alldatareorder.map --output-chr chrMT --recode vcf --out chr10allreorder
+plink --ped chr11alldatareorder.ped --map chr11alldatareorder.map --output-chr chrMT --recode vcf --out chr11allreorder
+plink --ped chr12alldatareorder.ped --map chr12alldatareorder.map --output-chr chrMT --recode vcf --out chr12allreorder
+plink --ped chr13alldatareorder.ped --map chr13alldatareorder.map --output-chr chrMT --recode vcf --out chr13allreorder
+plink --ped chr14alldatareorder.ped --map chr14alldatareorder.map --output-chr chrMT --recode vcf --out chr14allreorder
+plink --ped chr15alldatareorder.ped --map chr15alldatareorder.map --output-chr chrMT --recode vcf --out chr15allreorder
+plink --ped chr16alldatareorder.ped --map chr16alldatareorder.map --output-chr chrMT --recode vcf --out chr16allreorder
+plink --ped chr17alldatareorder.ped --map chr17alldatareorder.map --output-chr chrMT --recode vcf --out chr17allreorder
+plink --ped chr18alldatareorder.ped --map chr18alldatareorder.map --output-chr chrMT --recode vcf --out chr18allreorder
+plink --ped chr19alldatareorder.ped --map chr19alldatareorder.map --output-chr chrMT --recode vcf --out chr19allreorder
+plink --ped chr20alldatareorder.ped --map chr20alldatareorder.map --output-chr chrMT --recode vcf --out chr20allreorder
+plink --ped chr21alldatareorder.ped --map chr21alldatareorder.map --output-chr chrMT --recode vcf --out chr21allreorder
+plink --ped chr22alldatareorder.ped --map chr22alldatareorder.map --output-chr chrMT --recode vcf --out chr22allreorder
+
+*gzip files
+
+bcftools sort chr1allreorder.vcf -Oz -o chr1allreorder.vcf.gz
+bcftools sort chr2allreorder.vcf -Oz -o chr2allreorder.vcf.gz
+bcftools sort chr3allreorder.vcf -Oz -o chr3allreorder.vcf.gz
+bcftools sort chr4allreorder.vcf -Oz -o chr4allreorder.vcf.gz
+bcftools sort chr5allreorder.vcf -Oz -o chr5allreorder.vcf.gz
+bcftools sort chr6allreorder.vcf -Oz -o chr6allreorder.vcf.gz
+bcftools sort chr7allreorder.vcf -Oz -o chr7allreorder.vcf.gz
+bcftools sort chr8allreorder.vcf -Oz -o chr8allreorder.vcf.gz
+bcftools sort chr9allreorder.vcf -Oz -o chr9allreorder.vcf.gz
+bcftools sort chr10allreorder.vcf -Oz -o chr10allreorder.vcf.gz
+bcftools sort chr11allreorder.vcf -Oz -o chr11allreorder.vcf.gz
+bcftools sort chr12allreorder.vcf -Oz -o chr12allreorder.vcf.gz
+bcftools sort chr13allreorder.vcf -Oz -o chr13allreorder.vcf.gz
+bcftools sort chr14allreorder.vcf -Oz -o chr14allreorder.vcf.gz
+bcftools sort chr15allreorder.vcf -Oz -o chr15allreorder.vcf.gz
+bcftools sort chr16allreorder.vcf -Oz -o chr16allreorder.vcf.gz
+bcftools sort chr17allreorder.vcf -Oz -o chr17allreorder.vcf.gz
+bcftools sort chr18allreorder.vcf -Oz -o chr18allreorder.vcf.gz
+bcftools sort chr19allreorder.vcf -Oz -o chr19allreorder.vcf.gz
+bcftools sort chr20allreorder.vcf -Oz -o chr20allreorder.vcf.gz
+bcftools sort chr21allreorder.vcf -Oz -o chr21allreorder.vcf.gz
+bcftools sort chr22allreorder.vcf -Oz -o chr22allreorder.vcf.gz
+
+************************************************
+
+
+******merge data with 1000G
+
+plink --bfile WESfinal --bmerge /sc/arion/projects/funEpi/Hara/SPARK_all/results1/ch1_22_genomes.bed /sc/arion/projects/funEpi/Hara/SPARK_all/results1/ch1_22_genomes.bim /sc/arion/projects/funEpi/Hara/SPARK_all/results1/ch1_22_genomes.fam --make-bed --out sparkfinal1000g_new
+
+plink --bfile sparkfinal1000g_new --geno 0.1 --make-bed --out spark1000gdata
+
+
+
+*ADMIXTURE analysis 
+
+
+
+plink --bfile spark1000gdata --indep-pairwise 50 10 0.1
+plink --bfile spark1000gdata --extract plink.prune.in --make-bed --out spark1000g_prune
+
+plink --bfile spark1000g_prune --recode12 --out spark1000g_prune
+
+
+ml admixture/1.3.0
+
+admixture spark1000g_prune.bed  4 --supervised
+
+*Post-QC analysis can be found on Minerva
+cd /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_final_postQC1/postQC1_scripts
+cd /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_final_postQC2/postQC2_scripts
+
+
+#create PCA
+
+plink --bfile WES1QC10 --keep whitall.txt --make-bed --out WESwhit
+plink --bfile WES1QC10 --keep afrall.txt --make-bed --out WESafr
+plink --bfile WES1QC10 --keep amrall.txt --make-bed --out WESamr
+
+plink --bfile WESwhit --indep-pairwise 50 10 0.1
+plink --bfile WESwhit --extract plink.prune.in --make-bed --out WESwhit_prune
+plink --bfile WESwhit_prune --pca
+
+
+plink --bfile WESafr --indep-pairwise 50 10 0.1
+plink --bfile WESafr --extract plink.prune.in --make-bed --out WESafr_prune
+plink --bfile WESafr_prune --pca
+
+plink --bfile WESamr --indep-pairwise 50 10 0.1
+plink --bfile WESamr --extract plink.prune.in --make-bed --out WESamr_prune
+plink --bfile WESamr_prune --pca
+
+
+*merge Post-QC data
+
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr1_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr1_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr1_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr1_clean.fam --extract intersecting_snps_chr1.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr1_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr2_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr2_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr2_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr2_clean.fam --extract intersecting_snps_chr2.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr2_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr3_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr3_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr3_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr3_clean.fam --extract intersecting_snps_chr3.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr3_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr4_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr4_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr4_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr4_clean.fam --extract intersecting_snps_chr4.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr4_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr5_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr5_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr5_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr5_clean.fam --extract intersecting_snps_chr5.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr5_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr6_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr6_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr6_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr6_clean.fam --extract intersecting_snps_chr6.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr6_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr7_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr7_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr7_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr7_clean.fam --extract intersecting_snps_chr7.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr7_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr8_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr8_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr8_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr8_clean.fam --extract intersecting_snps_chr8.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr8_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr9_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr9_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr9_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr9_clean.fam --extract intersecting_snps_chr9.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr9_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr10_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr10_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr10_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr10_clean.fam --extract intersecting_snps_chr10.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr10_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr11_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr11_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr11_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr11_clean.fam --extract intersecting_snps_chr11.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr11_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr12_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr12_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr12_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr12_clean.fam --extract intersecting_snps_chr12.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr12_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr13_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr13_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr13_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr13_clean.fam --extract intersecting_snps_chr13.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr13_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr14_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr14_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr14_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr14_clean.fam --extract intersecting_snps_chr14.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr14_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr15_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr15_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr15_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr15_clean.fam --extract intersecting_snps_chr15.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr15_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr16_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr16_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr16_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr16_clean.fam --extract intersecting_snps_chr16.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr16_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr17_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr17_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr17_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr17_clean.fam --extract intersecting_snps_chr17.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr17_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr18_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr18_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr18_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr18_clean.fam --extract intersecting_snps_chr18.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr18_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr19_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr19_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr19_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr19_clean.fam --extract intersecting_snps_chr19.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr19_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr20_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr20_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr20_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr20_clean.fam --extract intersecting_snps_chr20.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr20_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr21_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr21_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr21_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr21_clean.fam --extract intersecting_snps_chr21.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr21_final
+plink --bfile /sc/arion/projects/funEpi/SPARK_Final1/chr22_clean --bmerge /sc/arion/projects/funEpi/SPARK_Final2/chr22_clean.bed /sc/arion/projects/funEpi/SPARK_Final2/chr22_clean.bim /sc/arion/projects/funEpi/SPARK_Final2/chr22_clean.fam --extract intersecting_snps_chr22.txt --allow-no-sex --make-bed --out /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged/chr22_final
+
+
+
+
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr1_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr1_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr1_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr1_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr1_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr1_clean2_sorted.txt > intersecting_snps_chr1.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr2_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr2_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr2_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr2_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr2_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr2_clean2_sorted.txt > intersecting_snps_chr2.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr3_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr3_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr3_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr3_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr3_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr3_clean2_sorted.txt > intersecting_snps_chr3.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr4_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr4_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr4_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr4_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr4_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr4_clean2_sorted.txt > intersecting_snps_chr4.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr5_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr5_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr5_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr5_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr5_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr5_clean2_sorted.txt > intersecting_snps_chr5.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr6_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr6_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr6_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr6_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr6_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr6_clean2_sorted.txt > intersecting_snps_chr6.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr7_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr7_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr7_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr7_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr7_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr7_clean2_sorted.txt > intersecting_snps_chr7.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr8_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr8_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr8_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr8_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr8_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr8_clean2_sorted.txt > intersecting_snps_chr8.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr9_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr9_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr9_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr9_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr9_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr9_clean2_sorted.txt > intersecting_snps_chr9.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr10_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr10_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr10_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr10_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr10_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr10_clean2_sorted.txt > intersecting_snps_chr10.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr11_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr11_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr11_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr11_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr11_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr11_clean2_sorted.txt > intersecting_snps_chr11.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr12_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr12_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr12_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr12_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr12_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr12_clean2_sorted.txt > intersecting_snps_chr12.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr13_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr13_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr13_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr13_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr13_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr13_clean2_sorted.txt > intersecting_snps_chr13.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr14_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr14_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr14_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr14_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr14_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr14_clean2_sorted.txt > intersecting_snps_chr14.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr15_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr15_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr15_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr15_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr15_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr15_clean2_sorted.txt > intersecting_snps_chr15.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr16_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr16_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr16_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr16_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr16_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr16_clean2_sorted.txt > intersecting_snps_chr16.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr17_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr17_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr17_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr17_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr17_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr17_clean2_sorted.txt > intersecting_snps_chr17.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr18_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr18_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr18_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr18_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr18_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr18_clean2_sorted.txt > intersecting_snps_chr18.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr19_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr19_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr19_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr19_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr19_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr19_clean2_sorted.txt > intersecting_snps_chr19.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr20_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr20_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr20_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr20_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr20_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr20_clean2_sorted.txt > intersecting_snps_chr20.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr21_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr21_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr21_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr21_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr21_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr21_clean2_sorted.txt > intersecting_snps_chr21.txt
+
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final1/chr22_clean.bim | sort > /sc/arion/projects/funEpi/SPARK_Final1/chr22_clean1_sorted.txt
+awk '{print $2}' /sc/arion/projects/funEpi/SPARK_Final2/chr22_clean.bim| sort > /sc/arion/projects/funEpi/SPARK_Final2/chr22_clean2_sorted.txt
+comm -12 /sc/arion/projects/funEpi/SPARK_Final1/chr22_clean1_sorted.txt /sc/arion/projects/funEpi/SPARK_Final2/chr22_clean2_sorted.txt > intersecting_snps_chr22.txt
+
+
+
+
+
