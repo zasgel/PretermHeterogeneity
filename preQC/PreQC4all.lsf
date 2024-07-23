@@ -1,0 +1,36 @@
+#!/bin/bash
+#BSUB -J "Pre_QC4_all"
+#BSUB -P acc_funEpi
+#BSUB -q premium
+#BSUB -n 2
+#BSUB -R span[hosts=1]
+#BSUB -R rusage[mem=16000]
+#BSUB -W 24:00
+#BSUB -oo /sc/arion/projects/funEpi/Hara/SPARK_all/output/Pre_QC4.stdout
+#BSUB -eo /sc/arion/projects/funEpi/Hara/SPARK_all/output/Pre_QC4.stderr
+
+
+
+module load plink/1.90b6.21 
+
+plink --bfile /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1QC2 --remove /sc/arion/projects/funEpi/Hara/SPARK_all/results/sex_discrepancy_WES1.txt --make-bed --out  /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1QC3
+
+plink --bfile WES1QC3 --geno 0.02 --maf 0.01 --make-bed --out WES1QC4
+
+plink --bfile WES1QC4 --make-pheno /sc/arion/projects/funEpi/Hara/Pre_QC_SPARK/WES1/premature_cases.txt '*' --make-bed --out WES1QC5
+
+plink \
+--bfile /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1QC5 \
+--chr 1-22 \
+--make-bed \
+--out /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1QC5a
+
+plink --bfile WES1QC5a --hwe 0.000001 --make-bed --out WES1QC6a
+
+plink --bfile WES1QC6a --hwe 1e-10 --hwe-all --make-bed --out WES1QC6
+
+plink --bfile WES1QC6 --keep /sc/arion/projects/funEpi/Hara/Pre_QC_SPARK/WES1/premature_cc.txt --make-bed --out WES1QC7
+
+
+
+

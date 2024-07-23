@@ -1,0 +1,33 @@
+#!/bin/bash
+#BSUB -J "Pre_QC1_all"
+#BSUB -P acc_funEpi
+#BSUB -q premium
+#BSUB -n 2
+#BSUB -R span[hosts=1]
+#BSUB -R rusage[mem=16000]
+#BSUB -W 24:00
+#BSUB -oo /sc/arion/projects/funEpi/Hara/SPARK_all/output/Pre_QC1.stdout
+#BSUB -eo /sc/arion/projects/funEpi/Hara/SPARK_all/output/Pre_QC1.stderr
+
+
+
+module load plink/1.90b6.21 
+
+plink \
+--bfile /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES_1_2_3_final \
+--chr 1-23 \
+--make-bed \
+--out /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1QC1
+
+plink \
+--bfile /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1QC1 \
+--missing \
+--out /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1QC1_miss
+
+plink \
+--bfile /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1QC1 \
+--geno 0.1 \
+--make-bed \
+--out /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1QC1_geno1
+
+

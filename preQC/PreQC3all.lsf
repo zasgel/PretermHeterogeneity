@@ -1,0 +1,20 @@
+#!/bin/bash
+#BSUB -J "Pre_QC3_all"
+#BSUB -P acc_funEpi
+#BSUB -q premium
+#BSUB -n 2
+#BSUB -R span[hosts=1]
+#BSUB -R rusage[mem=16000]
+#BSUB -W 24:00
+#BSUB -oo /sc/arion/projects/funEpi/Hara/SPARK_all/output/Pre_QC3.stdout
+#BSUB -eo /sc/arion/projects/funEpi/Hara/SPARK_all/output/Pre_QC3.stderr
+
+
+
+module load plink/1.90b6.21 
+
+
+plink --bfile  /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1QC2 --check-sex --out /sc/arion/projects/funEpi/Hara/SPARK_all/results/WES1QC2.sexcheck
+
+
+
