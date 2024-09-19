@@ -1,0 +1,104 @@
+Sender: LSF System <lsfadmin@lc03e07>
+Subject: Job 89774479[20]: <PostQC1_3a[20-23]> in cluster <chimera> Done
+
+Job <PostQC1_3a[20-23]> was submitted from host <li03c02> by user <chatzc02> in cluster <chimera> at Mon May 15 16:17:33 2023
+Job was executed on host(s) <lc03e07>, in queue <premium>, as user <chatzc02> in cluster <chimera> at Mon May 15 16:17:39 2023
+</hpc/users/chatzc02> was used as the home directory.
+</sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_final_postQC1/postQC1_scripts> was used as the working directory.
+Started at Mon May 15 16:17:39 2023
+Terminated at Mon May 15 16:18:00 2023
+Results reported at Mon May 15 16:18:00 2023
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -J "PostQC1_3a[20-23]" 
+#BSUB -P acc_funEpi
+#BSUB -q premium
+#BSUB -n 1
+#BSUB -R affinity[core(2)]
+#BSUB -R span[hosts=1]
+#BSUB -R rusage[mem=16GB]
+#BSUB -W 12:00
+#BSUB -oo /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_final_postQC1/postQC1_scripts/PostQC1_3a.stdout
+#BSUB -eo /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_final_postQC1/postQC1_scripts/PostQC1_3a.stderr
+
+module load plink2/v2.00a3.3
+chr=${LSB_JOBINDEX}
+dir="/sc/arion/projects/funEpi/SPARK_Final1"
+vcf="${dir}/chr${chr}.dose.vcf.gz"
+impdir="/sc/arion/projects/funEpi/SPARK_Final1"
+pgen="${impdir}/chr${chr}_HDS"
+
+
+plink2 --pgen ${pgen}.pgen \
+--psam ${pgen}.psam \
+--pvar ${pgen}.pvar \
+--minimac3-r2-filter 0.5 \
+--maf 0.01 minor \
+--make-bed \
+--out ${impdir}/chr${chr}_clean  
+
+
+
+
+
+
+
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   38.03 sec.
+    Max Memory :                                 1161 MB
+    Average Memory :                             922.31 MB
+    Total Requested Memory :                     16384.00 MB
+    Delta Memory :                               15223.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                52
+    Run time :                                   21 sec.
+    Turnaround time :                            27 sec.
+
+The output (if any) follows:
+
+PLINK v2.00a3.3LM SSE4.2 Intel (3 Jun 2022)    www.cog-genomics.org/plink/2.0/
+(C) 2005-2022 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to /sc/arion/projects/funEpi/SPARK_Final1/chr20_clean.log.
+Options in effect:
+  --maf 0.01 minor
+  --make-bed
+  --minimac3-r2-filter 0.5
+  --out /sc/arion/projects/funEpi/SPARK_Final1/chr20_clean
+  --pgen /sc/arion/projects/funEpi/SPARK_Final1/chr20_HDS.pgen
+  --psam /sc/arion/projects/funEpi/SPARK_Final1/chr20_HDS.psam
+  --pvar /sc/arion/projects/funEpi/SPARK_Final1/chr20_HDS.pvar
+
+Start time: Mon May 15 16:17:40 2023
+192800 MiB RAM detected; reserving 96400 MiB for main workspace.
+Using up to 48 threads (change this with --threads).
+15973 samples (0 females, 0 males, 15973 ambiguous; 15973 founders) loaded from
+/sc/arion/projects/funEpi/SPARK_Final1/chr20_HDS.psam.
+6631675 variants loaded from
+/sc/arion/projects/funEpi/SPARK_Final1/chr20_HDS.pvar.
+Note: No phenotype data present.
+Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%done.
+6413370 variants removed due to allele frequency threshold(s)
+(--maf/--max-maf/--mac/--max-mac).
+--minimac3-r2-filter: 3918 variants removed.
+214387 variants remaining after main filters.
+Writing /sc/arion/projects/funEpi/SPARK_Final1/chr20_clean.fam ... done.
+Writing /sc/arion/projects/funEpi/SPARK_Final1/chr20_clean.bim ... done.
+Writing /sc/arion/projects/funEpi/SPARK_Final1/chr20_clean.bed ... 0%1%2%3%4%5%6%8%9%10%11%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%29%30%31%32%33%34%36%37%38%39%40%41%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%62%63%64%65%67%68%69%70%71%72%73%74%75%76%77%78%79%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%99%done.
+End time: Mon May 15 16:18:00 2023
+
+
+PS:
+
+Read file </sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_final_postQC1/postQC1_scripts/PostQC1_3a.stderr> for stderr output of this job.
+

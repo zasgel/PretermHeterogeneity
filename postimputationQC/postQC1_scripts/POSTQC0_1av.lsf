@@ -1,0 +1,33 @@
+#!/bin/bash
+#BSUB -J "PostQC1_0v[10-11]" 
+#BSUB -P acc_funEpi
+#BSUB -q premium
+#BSUB -n 1
+#BSUB -R affinity[core(2)]
+#BSUB -R span[hosts=1]
+#BSUB -R rusage[mem=96GB]
+#BSUB -W 72:00
+#BSUB -oo /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_final_postQC1/postQC1_output/PostQC1_0v.stdout
+#BSUB -eo /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_final_postQC1/postQC1_output/PostQC1_0v.stderr
+
+snpsift="/sc/arion/projects/funEpi/Hara/SPARK_all/SPARK_all_imputed/data/snpEff/SnpSift.jar"
+dbsnp="/sc/arion/projects/funEpi/Hara/SPARK_all/SPARK_all_imputed/data/00-All.vcf.gz"
+
+module load java/11.0.2
+
+chr=${LSB_JOBINDEX}
+imp="/sc/arion/projects/funEpi/SPARK_Final1/chr${chr}"
+target=${imp}.dose.id.vcf.gz
+tsvf=${imp}.pos.id.tsv
+
+java -jar ${snpsift} annotate ${dbsnp} ${imp}.dose.vcf.gz |gzip -c > ${target} 
+zcat ${target} |grep -v "#" |cut -f3 |perl -pe 's/:/\t/g;s/;/\t/' |awk '{OFS="\t"}{print $1":"$2":"$3":"$4,$1,$2,$3,$4,$5}'> ${tsvf}
+mv ${tsvf} ${tsvf}.tmp
+cat ${tsvf}.tmp |awk '{OFS="\t"}{if($6==""){print $0"\t"$1}else{$6=$1"_"$6;print $0}}' > ${tsvf} 
+
+
+
+
+
+
+

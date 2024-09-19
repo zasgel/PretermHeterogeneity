@@ -1,0 +1,15 @@
+#!/bin/bash
+#BSUB -J "admixture4new"
+#BSUB -P acc_funEpi
+#BSUB -q premium
+#BSUB -n 1
+#BSUB -R affinity[core(4)]
+#BSUB -R span[hosts=1]
+#BSUB -R rusage[mem=16GB]
+#BSUB -W 130:00
+#BSUB -oo /sc/arion/projects/funEpi/Hara/SPARK_all/SPARK_all_imputed/output/admixture4new.stdout
+#BSUB -eo /sc/arion/projects/funEpi/Hara/SPARK_all/SPARK_all_imputed/output/admixture4new.stderr
+
+ml admixture/1.3.0
+
+admixture /sc/arion/projects/funEpi/Hara/SPARK_all/results1/spark1000g_prune.bed 4 --supervised -j4 
