@@ -1,0 +1,25 @@
+#!/bin/bash
+#BSUB -J "PostQC2_2aii[12-15]" 
+#BSUB -P acc_funEpi
+#BSUB -q premium
+#BSUB -n 4
+#BSUB -R span[hosts=1]
+#BSUB -R rusage[mem=16000]
+#BSUB -W 5:00
+#BSUB -oo /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_final_postQC2/postQC2_output/PostQC2aii.stdout
+#BSUB -eo /sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_final_postQC2/postQC2_output/PostQC2aii.stderr
+
+module load plink2/v2.00a3.3
+chr=${LSB_JOBINDEX}
+dir="/sc/arion/projects/funEpi/SPARK_Final2"
+vcf="${dir}/chr${chr}.dose.vcf.gz"
+
+
+plink2 --vcf ${vcf} dosage=HDS --make-pgen --out ${dir}/chr${chr}_HDS  
+
+
+
+
+
+
+
