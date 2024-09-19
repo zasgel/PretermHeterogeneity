@@ -1,0 +1,17 @@
+#!/bin/bash
+#BSUB -J "metalSPARK2"
+#BSUB -P acc_funEpi
+#BSUB -q premium
+#BSUB -n 1
+#BSUB -R affinity[core(2)]
+#BSUB -R span[hosts=1]
+#BSUB -R rusage[mem=16GB]
+#BSUB -W 48:00
+#BSUB -oo /sc/arion/projects/funEpi/Hara/SPARK_all/SPARK_all_imputed/output/metal4.stdout
+#BSUB -eo /sc/arion/projects/funEpi/Hara/SPARK_all/SPARK_all_imputed/output/metal4.stderr
+
+module load  metal/2011-03-25
+
+metal Metal_Spark4.txt
+
+
