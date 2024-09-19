@@ -1,0 +1,29 @@
+#!/bin/bash
+#BSUB -J "PostQC_amr[1-22]" 
+#BSUB -P acc_funEpi
+#BSUB -q premium
+#BSUB -n 1
+#BSUB -R affinity[core(2)]
+#BSUB -R span[hosts=1]
+#BSUB -R rusage[mem=16GB]
+#BSUB -W 12:00
+#BSUB -oo /sc/arion/projects/funEpi/Hara/SPARK_all/SPARK_all_imputed/output/PostQC_amr.stdout
+#BSUB -eo /sc/arion/projects/funEpi/Hara/SPARK_all/SPARK_all_imputed/output/PostQC_amr.stderr
+
+module load plink/1.90b6.21
+
+impdir="/sc/arion/projects/funEpi/Hara/SPARK_final/SPARK_merged"
+chr=${LSB_JOBINDEX}
+
+
+
+
+
+plink --bfile ${impdir}/chr${chr}_newrs --allow-no-sex --keep ${impdir}/cc_WESamr.txt --make-pheno ${impdir}/case_WESamr.txt '*' --make-bed --out ${impdir}/chr${chr}_finalamr
+plink --bfile ${impdir}/chr${chr}_finalamr --allow-no-sex --logistic --ci 0.95 --covar ${impdir}/covarWESamr.txt --covar-number  3-12 --out ${impdir}/chr${chr}_adjrs_amr
+grep "ADD" ${impdir}/chr${chr}_adjrs_amr.assoc.logistic > ${impdir}/chr${chr}finalrs_amr
+
+
+
+
+
