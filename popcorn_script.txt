@@ -1,0 +1,367 @@
+#popcorn script
+module load plink/2.0
+plink2 --zst-decompress all_hg38.pgen.zst all_hg38.pgen
+plink2 --zst-decompress all_hg38.pvar.zst all_hg38.pvar
+
+
+#!/bin/bash
+#SBATCH --job-name=plink
+#SBATCH --ntasks=2            
+#SBATCH --nodes=1             
+#SBATCH --time=24:00:00      
+
+module load plink/2.0
+plink2 --pfile all_hg38 --make-bed  --allow-extra-chr --set-all-var-ids @:#:\$r:\$a --new-id-max-allele-len 487 --out newONEKG
+plink2 --pfile all_hg38 --make-bed --allow-extra-chr --out newONEKG_new
+
+awk '$5=="A" || $5=="T" || $5=="C" || $5=="G"' newONEKG_new.bim > newONEKG_v0_new.bim
+awk '$6=="A" || $6=="T" || $6=="C" || $6=="G"' newONEKG_v0_new.bim > newONEKG_v1_new.bim
+awk '{print $2}' newONEKG_v1_new.bim > to_keep.txt
+
+#!/bin/bash
+#SBATCH --job-name=plink
+#SBATCH --ntasks=2            
+#SBATCH --nodes=1             
+#SBATCH --time=24:00:00        
+
+module load plink/2.0
+plink2 --bfile newONEKG_new --extract to_keep.txt --allow-extra-chr --make-bed --out newONEKG_v0_new     
+plink2 --bfile newONEKG_v0_new --keep afr_subset.txt --allow-extra-chr --make-bed --out AFR_filtered_new
+plink2 --bfile newONEKG_v0_new --keep eur_subset.txt --allow-extra-chr --make-bed --out EUR_filtered_new
+plink2 --bfile newONEKG_v0_new --keep amr_subset.txt --allow-extra-chr --make-bed --out AMR_filtered_new
+
+
+
+
+awk 'NR==1{$1="SNP"; $2="A1"; $3="A2"; print; next}1' afr_SPARK_clean2.txt > afr_SPARK_clean2_updated.txt
+
+
+
+
+#!/bin/bash
+#SBATCH --job-name=non_autosomes
+#SBATCH --ntasks=2            
+#SBATCH --nodes=1        
+#SBATCH --cpus-per-task=2      
+#SBATCH --time=24:00:00  
+#SBATCH --mem=32G
+
+module load plink/1.9
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/EUR_filtered_new --chr 1-22 --allow-extra-chr --make-bed --out EUR_filtered_autosomes
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/AMR_filtered_new --chr 1-22 --allow-extra-chr --make-bed --out AMR_filtered_autosomes
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/AFR_filtered_new --chr 1-22 --allow-extra-chr --make-bed --out AFR_filtered_autosomes
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/newONEKG_v0_new  --chr 1-22 --allow-extra-chr --make-bed --out ALL_filtered_autosomes
+
+
+awk '{print $2}' EUR_filtered_autosomes.bim > EUR_snplist.rsids
+awk '{print $2}' ALL_filtered_autosomes.bim > ALL_snplist.rsids
+awk '{print $2}' AFR_filtered_autosomes.bim > AFR_snplist.rsids
+awk '{print $2}' AMR_filtered_autosomes.bim > AMR_snplist.rsids
+
+
+
+#!/bin/bash
+#SBATCH --job-name=sort
+#SBATCH --ntasks=2            
+#SBATCH --nodes=1        
+#SBATCH --cpus-per-task=2      
+#SBATCH --time=24:00:00  
+#SBATCH --mem=32G
+
+grep -Fxf EUR_snplist.rsids AMR_snplist.rsids > AMR_common_snps.txt
+grep -Fxf EUR_snplist.rsids AFR_snplist.rsids > AFR_common_snps.txt
+grep -Fxf EUR_snplist.rsids ALL_snplist.rsids > ALL_common_snps.txt
+
+
+#!/bin/bash
+#SBATCH --job-name=common
+#SBATCH --ntasks=2            
+#SBATCH --nodes=1        
+#SBATCH --cpus-per-task=2      
+#SBATCH --time=24:00:00  
+#SBATCH --mem=32G
+
+
+plink --bfile EUR_filtered_autosomes --extract AFR_common_snps.txt --make-bed --out EUR_common_AFR
+plink --bfile AFR_filtered_autosomes --extract AFR_common_snps.txt --make-bed --out AFR_common
+plink --bfile AMR_filtered_autosomes --extract AMR_common_snps.txt --make-bed --out AMR_common
+plink --bfile EUR_filtered_autosomes --extract AMR_common_snps.txt --make-bed --out EUR_common_AMR
+plink --bfile EUR_filtered_autosomes --extract ALL_common_snps.txt --make-bed --out EUR_common_ALL
+plink --bfile ALL_filtered_autosomes --extract ALL_common_snps.txt --make-bed --out ALL_common
+
+
+
+
+##
+awk '{print $2}' /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AMR.bim | sort | uniq -d > duplicates_EUR_AMR.txt
+awk '{print $2}' /gpfs/scratch/asgelz01/1000Genomes/AMR_common.bim | sort | uniq -d > duplicates_AMR.txt
+awk '{print $2}' /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AFR.bim | sort | uniq -d > duplicates_EUR_AFR.txt
+awk '{print $2}' /gpfs/scratch/asgelz01/1000Genomes/AFR_common.bim | sort | uniq -d > duplicates_AFR.txt
+
+awk '{print $2}' /gpfs/scratch/asgelz01/1000Genomes/ALL_common.bim | sort | uniq -d > duplicates_ALL.txt
+awk '{print $2}' /gpfs/scratch/asgelz01/1000Genomes/EUR_common_ALL.bim | sort | uniq -d > duplicates_EUR_ALL.txt
+
+
+
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AMR \
+      --exclude duplicates_EUR_AMR.txt \
+      --make-bed \
+      --out /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AMR_clean
+
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/AMR_common \
+      --exclude duplicates_AMR.txt \
+      --make-bed \
+      --out /gpfs/scratch/asgelz01/1000Genomes/common_AMR_clean
+
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AFR \
+      --exclude duplicates_EUR_AFR.txt \
+      --make-bed \
+      --out /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AFR_clean
+
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/AFR_common \
+      --exclude duplicates_AFR.txt \
+      --make-bed \
+      --out /gpfs/scratch/asgelz01/1000Genomes/common_AFR_clean
+
+
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/ALL_common \
+      --exclude duplicates_ALL.txt \
+      --make-bed \
+      --out /gpfs/scratch/asgelz01/1000Genomes/common_ALL_clean
+
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/EUR_common_ALL \
+      --exclude duplicates_EUR_ALL.txt \
+      --make-bed \
+      --out /gpfs/scratch/asgelz01/1000Genomes/EUR_common_ALL_clean
+
+
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AMR_clean --maf 0.01 --make-bed --out EUR_common_AMR_clean_MAF_filtered
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/common_AMR_clean --maf 0.01 --make-bed --out common_AMR_clean_MAF_filtered
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AFR_clean --maf 0.01 --make-bed --out EUR_common_AFR_clean_MAF_filtered
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/common_AFR_clean --maf 0.01 --make-bed --out common_AFR_clean_MAF_filtered
+
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/common_ALL_clean --maf 0.01 --make-bed --out common_ALL_clean_MAF_filtered
+plink --bfile /gpfs/scratch/asgelz01/1000Genomes/EUR_common_ALL_clean --maf 0.01 --make-bed --out EUR_common_ALL_clean_MAF_filtered
+
+
+for chr in {1..22}; do
+    plink --bfile /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AMR_clean_MAF_filtered --chr $chr --make-bed --out /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AMR_chr${chr}
+    plink --bfile /gpfs/scratch/asgelz01/1000Genomes/common_AMR_clean_MAF_filtered --chr $chr --make-bed --out /gpfs/scratch/asgelz01/1000Genomes/AMR_common_chr${chr}     
+    plink --bfile /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AFR_clean_MAF_filtered --chr $chr --make-bed --out /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AFR_chr${chr}
+    plink --bfile /gpfs/scratch/asgelz01/1000Genomes/common_AFR_clean_MAF_filtered --chr $chr --make-bed --out /gpfs/scratch/asgelz01/1000Genomes/AFR_common_chr${chr}
+done
+
+for chr in {1..22}; do
+    plink --bfile /gpfs/scratch/asgelz01/1000Genomes/EUR_common_ALL_clean_MAF_filtered --chr $chr --make-bed --out /gpfs/scratch/asgelz01/1000Genomes/EUR_common_ALL_chr${chr}
+    plink --bfile /gpfs/scratch/asgelz01/1000Genomes/common_ALL_clean_MAF_filtered --chr $chr --make-bed --out /gpfs/scratch/asgelz01/1000Genomes/ALL_common_chr${chr}     
+done
+
+
+for chr in {1..22}; do
+    # Run Popcorn computations
+    python -m popcorn compute -v 1 \
+        --bfile1 /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AMR_chr${chr} \
+        --bfile2 /gpfs/scratch/asgelz01/1000Genomes/AMR_common_chr${chr} \
+         scores_AMR_chr${chr}.txt
+    
+    python -m popcorn compute -v 1 \
+        --bfile1 /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AFR_chr${chr} \
+        --bfile2 /gpfs/scratch/asgelz01/1000Genomes/AFR_common_chr${chr} \
+        scores_AFR_chr${chr}.txt
+done
+
+for chr in {1..22}; do
+    # Run Popcorn computations
+    python -m popcorn compute -v 1 \
+        --bfile1 /gpfs/scratch/asgelz01/1000Genomes/EUR_common_ALL_chr${chr} \
+        --bfile2 /gpfs/scratch/asgelz01/1000Genomes/ALL_common_chr${chr} \
+         scores_ALL_chr${chr}.txt
+
+done
+
+
+
+###already done?
+# Remove the MHC region (chr6:28,500,000-33,500,000) from chromosome 6 for AMR and AFR populations in Build 38
+echo "6 28500000 33500000" > exclude_MHC.txt
+plink --bfile AFR_common_chr6 --chr 6 --exclude exclude_MHC.txt --make-bed --out AFR_chr6_noMHC
+plink --bfile AMR_common_chr6 --chr 6 --exclude exclude_MHC.txt --make-bed --out AMR_chr6_noMHC
+plink --bfile ALL_common_chr6 --chr 6 --exclude exclude_MHC.txt --make-bed --out ALL_chr6_noMHC
+
+# Run Popcorn compute on the new chromosome 6 files
+python -m popcorn compute -v 1 \
+--bfile1 /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AMR_chr6 \
+--bfile2 /gpfs/scratch/asgelz01/1000Genomes/AMR_chr6_noMHC \
+--SNPs_to_store 20000 \
+ scores_AMR_chr6.txt
+
+python -m popcorn compute -v 1 \
+--bfile1 /gpfs/scratch/asgelz01/1000Genomes/EUR_common_AFR_chr6 \
+--bfile2 /gpfs/scratch/asgelz01/1000Genomes/AFR_chr6_noMHC \
+--SNPs_to_store 20000 \
+ scores_AFR_chr6.txt
+
+python -m popcorn compute -v 1 \
+--bfile1 /gpfs/scratch/asgelz01/1000Genomes/EUR_common_ALL_chr6 \
+--bfile2 /gpfs/scratch/asgelz01/1000Genomes/ALL_chr6_noMHC \
+--SNPs_to_store 20000 \
+ scores_ALL_chr6.txt
+#####
+
+cat scores_AMR_chr{1..22}.txt > scores_AMR_all.txt
+cat scores_AFR_chr{1..22}.txt > scores_AFR_all.txt
+cat scores_ALL_chr{1..22}.txt > scores_ALL_all.txt
+
+#!/bin/bash
+#SBATCH --job-name=popcorn_all
+#SBATCH --ntasks=2            
+#SBATCH --nodes=1        
+#SBATCH --cpus-per-task=2      
+#SBATCH --time=48:00:00  
+#SBATCH --mem=128G
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/PGC_ASD_hg38.txt.gz --gen_effect META_ASD.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect META_BIP.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect META_EP.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect META_MS.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect META_ED.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 AD_hg38_upper.txt --gen_effect META_AD.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt.gz --gen_effect META_PT.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz --gen_effect META_SCZ_pri.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz --gen_effect META_SCZ_eur.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect META_IM.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt.gz --gen_effect META_GI.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect META_ADHD.txt
+
+
+#!/bin/bash
+#SBATCH --job-name=popcorn_pge
+#SBATCH --ntasks=2            
+#SBATCH --nodes=1        
+#SBATCH --cpus-per-task=2      
+#SBATCH --time=24:00:00  
+#SBATCH --mem=32G
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/PGC_ASD_hg38.txt.gz --gen_effect pge_AMR_ASD.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.csv --sfile2 /gpfs/scratch/asgelz01/PGC_ASD_hg38.txt.gz --gen_effect pge_AFR_ASD.txt
+
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect pge_AMR_ADHD.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect pge_AFR_ADHD.txt
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect pge_AMR_BIP.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect pge_AFR_BIP.txt
+
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect pge_AMR_EP.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect pge_AFR_EP.txt
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect pge_AMR_MS.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect pge_AFR_MS.txt
+
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect pge_AMR_ED.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect pge_AFR_ED.txt
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 AD_hg38_upper.txt --gen_effect pge_AMR_AD.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 AD_hg38_upper.txt --gen_effect pge_AFR_AD.txt
+
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt.gz --gen_effect pge_AMR_PT.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt.gz --gen_effect pge_AFR_PT.txt
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz --gen_effect pge_AMR_SCZ_pri.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz --gen_effect pge_AFR_SCZ_pri.txt
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz --gen_effect pge_AMR_SCZ_eur.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz --gen_effect pge_AFR_SCZ_eur.txt
+
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect pge_AMR_IM.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect pge_AFR_IM.txt
+
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt.gz --gen_effect pge_AMR_GI.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt.gz --gen_effect pge_AFR_GI.txt
+
+
+
+#!/bin/bash
+#SBATCH --job-name=popcorn_eur
+#SBATCH --ntasks=2            
+#SBATCH --nodes=1        
+#SBATCH --cpus-per-task=2      
+#SBATCH --time=24:00:00  
+#SBATCH --mem=32G
+
+cat *.l2.ldscore > /gpfs/scratch/asgelz01/eur_w_ld_chr_all.txt
+
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr_all.txt --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/PGC_ASD_hg38.txt.gz --gen_effect pge_EUR_ASD.txt
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect pge_EUR_ADHD.txt
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect pge_EUR_BIP.txt
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect pge_EUR_EP.txt
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect pge_EUR_MS.txt
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect pge_EUR_ED.txt
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 AD_hg38_upper.txt --gen_effect pge_EUR_AD.txt
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt.gz --gen_effect pge_EUR_PT.txt
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz --gen_effect pge_EUR_SCZ_pri.txt
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz --gen_effect pge_EUR_SCZ_eur.txt
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect pge_EUR_IM.txt
+
+python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt.gz --gen_effect pge_EUR_GI.txt
+
+
+for file in pge_AMR_*.txt; do
+    # Extract the part after "pge_AMR_"
+    basefile=$(basename "$file" .txt | sed 's/^pge_AMR_//')
+    # Add the extracted part as a new column to the file contents
+    awk -v fname="$basefile" '{print fname, $0}' "$file"
+done > merged_pge_AMR.txt
+
+for file in pge_AFR_*.txt; do
+    # Extract the part after "pge_AFR_"
+    basefile=$(basename "$file" .txt | sed 's/^pge_AFR_//')
+    # Add the extracted part as a new column to the file contents
+    awk -v fname="$basefile" '{print fname, $0}' "$file"
+done > merged_pge_AFR.txt
+
+for file in pgi_AMR_*.txt; do
+    # Extract the part after "pgi_AMR_"
+    basefile=$(basename "$file" .txt | sed 's/^pgi_AMR_//')
+    # Add the extracted part as a new column to the file contents
+    awk -v fname="$basefile" '{print fname, $0}' "$file"
+done > merged_pgi_AMR.txt
+
+for file in pgi_AFR_*.txt; do
+    # Extract the part after "pge_AFR_"
+    basefile=$(basename "$file" .txt | sed 's/^pgi_AFR_//')
+    # Add the extracted part as a new column to the file contents
+    awk -v fname="$basefile" '{print fname, $0}' "$file"
+done > merged_pgi_AFR.txt
+
+for file in META_*.txt; do
+    # Extract the part after "pge_AFR_"
+    basefile=$(basename "$file" .txt | sed 's/^META_//')
+    # Add the extracted part as a new column to the file contents
+    awk -v fname="$basefile" '{print fname, $0}' "$file"
+done > merged_META.txt
