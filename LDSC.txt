@@ -1,0 +1,198 @@
+./munge_sumstats.py \
+--out EUR \
+--merge-alleles /gpfs/scratch/asgelz01/w_hm3.snplist \
+--sumstats /gpfs/scratch/asgelz01/whit_SPARKfinal.txt.gz 
+
+
+./munge_sumstats.py \
+--out META \
+--merge-alleles /gpfs/scratch/asgelz01/w_hm3.snplist \
+--sumstats /gpfs/scratch/asgelz01/METAANALYSIS1.txt
+
+./munge_sumstats.py \
+--out AD \
+--merge-alleles /gpfs/scratch/asgelz01/w_hm3.snplist \
+--sumstats /gpfs/scratch/asgelz01/Popcorn/AD_hg38_upper.txt
+
+./munge_sumstats.py \
+--out ASD \
+--merge-alleles /gpfs/scratch/asgelz01/w_hm3.snplist \
+--sumstats /gpfs/scratch/asgelz01/ASD_hg38_new.txt \
+--ignore beta
+
+./munge_sumstats.py \
+--out PT \
+--merge-alleles /gpfs/scratch/asgelz01/w_hm3.snplist \
+--sumstats /gpfs/scratch/asgelz01/PT_hg38.txt.gz
+
+./munge_sumstats.py \
+--out SCZ_eur \
+--merge-alleles /gpfs/scratch/asgelz01/w_hm3.snplist \
+--sumstats /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz
+
+
+./munge_sumstats.py \
+--out SCZ_pri \
+--merge-alleles /gpfs/scratch/asgelz01/w_hm3.snplist \
+--sumstats /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz
+
+#!/bin/bash
+#SBATCH --job-name=ldsc
+#SBATCH --ntasks=2            
+#SBATCH --nodes=1        
+#SBATCH --cpus-per-task=2      
+#SBATCH --time=24:00:00   
+
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_SCZ_eur_rg \
+--rg SCZ_eur.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_eur_SCZ_pri_rg \
+--rg SCZ_pri.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_SCZ__pri_rg \
+--rg SCZ_pri.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_eur_SCZ_eur_rg \
+--rg SCZ_eur.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_PT_rg \
+--rg PT.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_eur_PT_rg \
+--rg PT.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_ASD_rg \
+--rg ASD.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_eur_ASD_rg \
+--rg ASD.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_immun_rg \
+--rg /gpfs/scratch/asgelz01/Immunological.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_eur_immun_rg \
+--rg /gpfs/scratch/asgelz01/Immunological.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_musculo_rg \
+--rg /gpfs/scratch/asgelz01/Musculoskeletal.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_eur_musculo_rg \
+--rg /gpfs/scratch/asgelz01/Musculoskeletal.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_Gastro_rg \
+--rg /gpfs/scratch/asgelz01/Gastrointestinal.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_EUR_Gastro_rg \
+--rg /gpfs/scratch/asgelz01/Gastrointestinal.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_ED_rg \
+--rg /gpfs/scratch/asgelz01/ED.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_EUR_ED_rg \
+--rg /gpfs/scratch/asgelz01/ED.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_ADHD_rg \
+--rg /gpfs/scratch/asgelz01/ADHD.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_eur_ADHD_rg \
+--rg /gpfs/scratch/asgelz01/ADHD.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_eur_AD_rg \
+--rg AD.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_AD_rg \
+--rg AD.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_eur_EP_rg \
+--rg /gpfs/scratch/asgelz01/EP.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_EP_rg \
+--rg /gpfs/scratch/asgelz01/EP.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_eur_BIP_rg \
+--rg /gpfs/scratch/asgelz01/BIP.sumstats.gz,EUR.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
+
+./ldsc.py \
+--ref-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ \
+--out SPARK_full_BIP_rg \
+--rg /gpfs/scratch/asgelz01/BIP.sumstats.gz,META.sumstats.gz \
+--w-ld-chr /gpfs/scratch/asgelz01/eur_w_ld_chr/ 
+
