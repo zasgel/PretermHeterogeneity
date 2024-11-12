@@ -33,11 +33,6 @@ plink2 --bfile newONEKG_v0_new --keep amr_subset.txt --allow-extra-chr --make-be
 
 
 
-awk 'NR==1{$1="SNP"; $2="A1"; $3="A2"; print; next}1' afr_SPARK_clean2.txt > afr_SPARK_clean2_updated.txt
-
-
-
-
 #!/bin/bash
 #SBATCH --job-name=non_autosomes
 #SBATCH --ntasks=2            
@@ -181,7 +176,6 @@ done
 
 
 
-###already done?
 # Remove the MHC region (chr6:28,500,000-33,500,000) from chromosome 6 for AMR and AFR populations in Build 38
 echo "6 28500000 33500000" > exclude_MHC.txt
 plink --bfile AFR_common_chr6 --chr 6 --exclude exclude_MHC.txt --make-bed --out AFR_chr6_noMHC
@@ -219,29 +213,31 @@ cat scores_ALL_chr{1..22}.txt > scores_ALL_all.txt
 #SBATCH --cpus-per-task=2      
 #SBATCH --time=48:00:00  
 #SBATCH --mem=128G
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/PGC_ASD_hg38.txt.gz --gen_effect META_ASD.txt
 
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect META_BIP.txt
 
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect META_EP.txt
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 /gpfs/scratch/asgelz01/PGC_ASD_hg38.txt.gz --gen_effect META_ASD.txt
 
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect META_MS.txt
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect META_BIP.txt
 
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect META_ED.txt
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect META_EP.txt
 
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 AD_hg38_upper.txt --gen_effect META_AD.txt
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect META_MS.txt
 
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt.gz --gen_effect META_PT.txt
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect META_ED.txt
 
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz --gen_effect META_SCZ_pri.txt
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 AD_hg38_upper.txt --gen_effect META_AD.txt
 
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz --gen_effect META_SCZ_eur.txt
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt.gz --gen_effect META_PT.txt
 
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect META_IM.txt
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz --gen_effect META_SCZ_pri.txt
 
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt.gz --gen_effect META_GI.txt
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz --gen_effect META_SCZ_eur.txt
 
-python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/SPARK_meta38_final.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect META_ADHD.txt
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect META_IM.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt.gz --gen_effect META_GI.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/METAANALYSIS1.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect META_ADHD.txt
 
 
 #!/bin/bash
@@ -252,83 +248,49 @@ python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asg
 #SBATCH --time=24:00:00  
 #SBATCH --mem=32G
 
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/PGC_ASD_hg38.txt.gz --gen_effect pge_AMR_ASD.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.csv --sfile2 /gpfs/scratch/asgelz01/PGC_ASD_hg38.txt.gz --gen_effect pge_AFR_ASD.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/PGC_ASD_hg38.txt.gz --gen_effect pge_AMR_ASD.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/PGC_ASD_hg38.txt.gz --gen_effect pge_AFR_ASD.txt
 
 
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect pge_AMR_ADHD.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect pge_AFR_ADHD.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect pge_AMR_ADHD.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect pge_AFR_ADHD.txt
 
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect pge_AMR_BIP.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect pge_AFR_BIP.txt
-
-
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect pge_AMR_EP.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect pge_AFR_EP.txt
-
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect pge_AMR_MS.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect pge_AFR_MS.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect pge_AMR_BIP.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect pge_AFR_BIP.txt
 
 
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect pge_AMR_ED.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect pge_AFR_ED.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect pge_AMR_EP.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect pge_AFR_EP.txt
 
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 AD_hg38_upper.txt --gen_effect pge_AMR_AD.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 AD_hg38_upper.txt --gen_effect pge_AFR_AD.txt
-
-
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt.gz --gen_effect pge_AMR_PT.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt.gz --gen_effect pge_AFR_PT.txt
-
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz --gen_effect pge_AMR_SCZ_pri.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz --gen_effect pge_AFR_SCZ_pri.txt
-
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz --gen_effect pge_AMR_SCZ_eur.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz --gen_effect pge_AFR_SCZ_eur.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect pge_AMR_MS.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect pge_AFR_MS.txt
 
 
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect pge_AMR_IM.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect pge_AFR_IM.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect pge_AMR_ED.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect pge_AFR_ED.txt
 
-python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt.gz --gen_effect pge_AMR_GI.txt
-python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt.gz --gen_effect pge_AFR_GI.txt
-
-
-
-#!/bin/bash
-#SBATCH --job-name=popcorn_eur
-#SBATCH --ntasks=2            
-#SBATCH --nodes=1        
-#SBATCH --cpus-per-task=2      
-#SBATCH --time=24:00:00  
-#SBATCH --mem=32G
-
-cat *.l2.ldscore > /gpfs/scratch/asgelz01/eur_w_ld_chr_all.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 AD_hg38_upper.txt --gen_effect pge_AMR_AD.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 AD_hg38_upper.txt --gen_effect pge_AFR_AD.txt
 
 
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr_all.txt --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/PGC_ASD_hg38.txt.gz --gen_effect pge_EUR_ASD.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt.gz --gen_effect pge_AMR_PT.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt.gz --gen_effect pge_AFR_PT.txt
 
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect pge_EUR_ADHD.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz --gen_effect pge_AMR_SCZ_pri.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz --gen_effect pge_AFR_SCZ_pri.txt
 
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect pge_EUR_BIP.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz --gen_effect pge_AMR_SCZ_eur.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz --gen_effect pge_AFR_SCZ_eur.txt
 
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect pge_EUR_EP.txt
 
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect pge_EUR_MS.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect pge_AMR_IM.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect pge_AFR_IM.txt
 
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect pge_EUR_ED.txt
+python -m popcorn fit -v 1 --cfile scores_AMR_all.txt --sfile1 /gpfs/scratch/asgelz01/amr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt.gz --gen_effect pge_AMR_GI.txt
+python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asgelz01/afr_SPARKfinal_clean.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt.gz --gen_effect pge_AFR_GI.txt
 
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 AD_hg38_upper.txt --gen_effect pge_EUR_AD.txt
 
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt.gz --gen_effect pge_EUR_PT.txt
 
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt.gz --gen_effect pge_EUR_SCZ_pri.txt
-
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt.gz --gen_effect pge_EUR_SCZ_eur.txt
-
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect pge_EUR_IM.txt
-
-python -m popcorn fit -v 1 --cfile /gpfs/scratch/asgelz01/eur_w_ld_chr --sfile1 /gpfs/scratch/asgelz01/whit_SPARK_clean.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt.gz --gen_effect pge_EUR_GI.txt
 
 
 for file in pge_AMR_*.txt; do
@@ -345,19 +307,6 @@ for file in pge_AFR_*.txt; do
     awk -v fname="$basefile" '{print fname, $0}' "$file"
 done > merged_pge_AFR.txt
 
-for file in pgi_AMR_*.txt; do
-    # Extract the part after "pgi_AMR_"
-    basefile=$(basename "$file" .txt | sed 's/^pgi_AMR_//')
-    # Add the extracted part as a new column to the file contents
-    awk -v fname="$basefile" '{print fname, $0}' "$file"
-done > merged_pgi_AMR.txt
-
-for file in pgi_AFR_*.txt; do
-    # Extract the part after "pge_AFR_"
-    basefile=$(basename "$file" .txt | sed 's/^pgi_AFR_//')
-    # Add the extracted part as a new column to the file contents
-    awk -v fname="$basefile" '{print fname, $0}' "$file"
-done > merged_pgi_AFR.txt
 
 for file in META_*.txt; do
     # Extract the part after "pge_AFR_"
@@ -365,3 +314,4 @@ for file in META_*.txt; do
     # Add the extracted part as a new column to the file contents
     awk -v fname="$basefile" '{print fname, $0}' "$file"
 done > merged_META.txt
+
