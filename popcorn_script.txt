@@ -293,19 +293,19 @@ python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asg
 
 
 
-for file in pge_AMR_*.txt; do
+for file in pge_AMR_*_final.txt; do
     # Extract the part after "pge_AMR_"
     basefile=$(basename "$file" .txt | sed 's/^pge_AMR_//')
     # Add the extracted part as a new column to the file contents
     awk -v fname="$basefile" '{print fname, $0}' "$file"
-done > merged_pge_AMR.txt
+done > merged_AMR.txt
 
-for file in pge_AFR_*.txt; do
+for file in pge_AFR_*_final.txt; do
     # Extract the part after "pge_AFR_"
     basefile=$(basename "$file" .txt | sed 's/^pge_AFR_//')
     # Add the extracted part as a new column to the file contents
     awk -v fname="$basefile" '{print fname, $0}' "$file"
-done > merged_pge_AFR.txt
+done > merged_AFR.txt
 
 
 for file in META_*.txt; do
