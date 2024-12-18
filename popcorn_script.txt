@@ -293,25 +293,50 @@ python -m popcorn fit -v 1 --cfile scores_AFR_all.txt --sfile1 /gpfs/scratch/asg
 
 
 
+
+first_file=true
+
 for file in pge_AMR_*_final.txt; do
     # Extract the part after "pge_AMR_"
     basefile=$(basename "$file" .txt | sed 's/^pge_AMR_//')
-    # Add the extracted part as a new column to the file contents
-    awk -v fname="$basefile" '{print fname, $0}' "$file"
+    if $first_file; then
+        # For the first file, include the header
+        awk -v fname="$basefile" 'NR==1 {print "NewColumn", $0} NR>1 {print fname, $0}' "$file"
+        first_file=false
+    else
+        # For subsequent files, skip the header
+        awk -v fname="$basefile" 'NR>1 {print fname, $0}' "$file"
+    fi
 done > merged_AMR.txt
 
+
+first_file=true
+
 for file in pge_AFR_*_final.txt; do
-    # Extract the part after "pge_AFR_"
     basefile=$(basename "$file" .txt | sed 's/^pge_AFR_//')
-    # Add the extracted part as a new column to the file contents
-    awk -v fname="$basefile" '{print fname, $0}' "$file"
+    if $first_file; then
+        # For the first file, include the header
+        awk -v fname="$basefile" 'NR==1 {print "NewColumn", $0} NR>1 {print fname, $0}' "$file"
+        first_file=false
+    else
+        # For subsequent files, skip the header
+        awk -v fname="$basefile" 'NR>1 {print fname, $0}' "$file"
+    fi
 done > merged_AFR.txt
 
+first_file=true
 
-for file in META_*.txt; do
-    # Extract the part after "pge_AFR_"
+for file in META_*_final.txt; do
     basefile=$(basename "$file" .txt | sed 's/^META_//')
-    # Add the extracted part as a new column to the file contents
-    awk -v fname="$basefile" '{print fname, $0}' "$file"
+    if $first_file; then
+        # For the first file, include the header
+        awk -v fname="$basefile" 'NR==1 {print "NewColumn", $0} NR>1 {print fname, $0}' "$file"
+        first_file=false
+    else
+        # For subsequent files, skip the header
+        awk -v fname="$basefile" 'NR>1 {print fname, $0}' "$file"
+    fi
 done > merged_META.txt
+
+
 
