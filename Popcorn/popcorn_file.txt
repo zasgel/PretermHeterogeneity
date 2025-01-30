@@ -1,0 +1,44 @@
+
+first_file=true
+
+for file in final_AMR_*.txt; do
+    # Extract the part after "pge_AMR_"
+    basefile=$(basename "$file" .txt | sed 's/^final_AMR_//')
+    if $first_file; then
+        # For the first file, include the header
+        awk -v fname="$basefile" 'NR==1 {print "NewColumn", $0} NR>1 {print fname, $0}' "$file"
+        first_file=false
+    else
+        # For subsequent files, skip the header
+        awk -v fname="$basefile" 'NR>1 {print fname, $0}' "$file"
+    fi
+done > merged_AMR.txt
+
+
+first_file=true
+
+for file in final_AFR_*.txt; do
+    basefile=$(basename "$file" .txt | sed 's/^final_AFR_//')
+    if $first_file; then
+        # For the first file, include the header
+        awk -v fname="$basefile" 'NR==1 {print "NewColumn", $0} NR>1 {print fname, $0}' "$file"
+        first_file=false
+    else
+        # For subsequent files, skip the header
+        awk -v fname="$basefile" 'NR>1 {print fname, $0}' "$file"
+    fi
+done > merged_AFR.txt
+
+first_file=true
+
+for file in final_META_*.txt; do
+    basefile=$(basename "$file" .txt | sed 's/^final_META_//')
+    if $first_file; then
+        # For the first file, include the header
+        awk -v fname="$basefile" 'NR==1 {print "NewColumn", $0} NR>1 {print fname, $0}' "$file"
+        first_file=false
+    else
+        # For subsequent files, skip the header
+        awk -v fname="$basefile" 'NR>1 {print fname, $0}' "$file"
+    fi
+done > merged_META.txt
