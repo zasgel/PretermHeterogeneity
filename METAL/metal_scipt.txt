@@ -1,0 +1,19 @@
+TRACKPOSITIONS ON
+SEPARATOR  TAB
+MARKERLABEL   SNP
+ALLELELABELS A2 A1
+PVALUE  p-value
+EFFECT  log(OR)
+WEIGHTLABEL N
+STDERR  SE
+SCHEME STDERR
+GENOMICCONTROL ON
+CHROMOSOMELABEL CHR 
+POSITIONLABEL POS
+
+
+PROCESS /Users/asgelz01/Downloads/filtered/finalrs_afr_common.txt
+PROCESS /Users/asgelz01/Downloads/filtered/finalrs_amr_common.txt
+PROCESS /Users/asgelz01/Downloads/filtered/finalrs_eur_common.txt
+
+ANALYZE
