@@ -1,0 +1,10 @@
+output_file="combined_rg_summary.txt"
+
+for file in $(find . -type f -name '*_rg.log'); do
+  echo "Processing $file..."
+  
+  sed -n '/Summary of Genetic Correlation Results/,/Total time elapsed:/p' "$file" >> "$output_file"
+  echo -e "\n" >> "$output_file"  # Separate tables with a newline
+done
+
+echo "All genetic correlation summary tables have been combined into $output_file."
