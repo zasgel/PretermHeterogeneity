@@ -1,0 +1,32 @@
+#!/bin/bash
+#SBATCH --job-name=META
+#SBATCH --ntasks=2            
+#SBATCH --nodes=1        
+#SBATCH --cpus-per-task=2      
+#SBATCH --time=12:00:00  
+#SBATCH --partition=cpu_short
+#SBATCH --mem=12G
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 /gpfs/scratch/asgelz01/BIP_hg38.txt --gen_effect final_META_BIP.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 /gpfs/scratch/asgelz01/EP_hg38_upper.txt --gen_effect final_META_EP.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 /gpfs/scratch/asgelz01/MS_hg38_upper.txt --gen_effect final_META_MS.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 /gpfs/scratch/asgelz01/ED_hg38.txt.gz --gen_effect final_META_ED.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 AD_hg38_upper.txt --gen_effect final_META_AD.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 /gpfs/scratch/asgelz01/PT_hg38.txt --gen_effect final_META_PT.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_pri_hg38.txt --gen_effect final_META_SCZ_pri.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 /gpfs/scratch/asgelz01/SCZ_eur_hg38.txt --gen_effect final_META_SCZ_eur.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 /gpfs/scratch/asgelz01/IM_hg38.txt.gz --gen_effect final_META_IM.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 /gpfs/scratch/asgelz01/GI_hg38.txt --gen_effect final_META_GI.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 /gpfs/scratch/asgelz01/ADHD_hg38.txt --gen_effect final_META_ADHD.txt
+
+python -m popcorn fit -v 1 --cfile scores_ALL_all.txt --sfile1 /gpfs/scratch/asgelz01/final_meta_filtered.txt --sfile2 /gpfs/scratch/asgelz01/ASD_hg38_new.txt --gen_effect final_META_ASD.txt
