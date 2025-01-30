@@ -1,0 +1,36 @@
+#!/bin/bash
+#SBATCH --array=1-22                  # Job array for chromosomes 1-22
+#SBATCH --job-name=PostQC_afr         # Job name
+#SBATCH --ntasks=1                    # One task per array job
+#SBATCH --cpus-per-task=2             # Two CPUs per task
+#SBATCH --time=12:00:00  
+#SBATCH --partition=cpu_short
+#SBATCH --mem=12G
+#SBATCH --error=/gpfs/scratch/asgelz01/New_GWAS/PostQC_afr_%A_%a.stderr   # Save stderr to scratch
+
+# Load PLINK module
+module load plink/2.0
+
+# Input and output directories
+impdir="/gpfs/data/janeckalab/Hara_Final/Results/SPARK_merged"
+output_dir="/gpfs/scratch/asgelz01/New_GWAS"
+chr=${SLURM_ARRAY_TASK_ID}  # Array index for chromosome number
+
+
+plink2 \
+  --bfile ${impdir}/chr${chr}_finaleth \
+  --allow-no-sex \
+  --glm cols=+a1freq,+a1count,+ref \
+  --ci 0.95 \
+  --geno 0.01 \
+  --maf 0.01 \
+  --hwe 1e-6 \
+  --covar ${impdir}/covarWESafr.txt \
+  --covar-col-nums 3-17 \
+  --out ${output_dir}/chr${chr}_adjrs_afr_new
+
+
+# Filter results for additive genetic model
+grep "ADD" ${output_dir}/chr${chr}_adjrs_afr_new.assoc.logistic > ${output_dir}/chr${chr}_finalrs_afr_new
+
+
