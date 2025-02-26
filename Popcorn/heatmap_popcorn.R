@@ -62,7 +62,7 @@ popcorn_plot <- ggplot(heatmap_data_long, aes(x = Preterm_Group, y = Trait, fill
   labs(title = "Popcorn Results Heatmap",
        x = "Preterm SPARK",
        y = "Trait",
-       fill = "Genetic Correlation") +
+       fill = "Genetic Effect") +
   scale_fill_gradientn(
     colors = c("blue", "white", "red"),
     values = scales::rescale(c(-2, 0, 2)),
@@ -96,3 +96,4 @@ ldsc_plot <- ggplot(heatmap_data_long_ldsc, aes(x = Preterm_Group, y = Trait, fi
 
 library(gridExtra)
 grid.arrange(ldsc_plot, popcorn_plot, ncol = 1)
+
