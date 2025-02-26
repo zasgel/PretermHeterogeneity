@@ -3,19 +3,15 @@ library(data.table)
 library(dplyr)
 library(stringr)
 
-# Define the base directory
-base_directory <- "~/Downloads/BridgePRS-main_newest"
-
-# List all folders in the base directory
-folders <- list.dirs(base_directory, full.names = TRUE, recursive = FALSE)
-
-filtered_folders <- folders[grep("_single$", basename(folders))]
+main_dir <- "~/Downloads/BridgePRS-main_newest"  
+all_dirs <- list.dirs(path = main_dir, full.names = TRUE)
+folders <- all_dirs[grepl("^EUR_", basename(all_dirs))]
 
 # Initialize an empty list to store data frames
 all_data <- list()
 
 # Loop through each filtered folder
-for (folder in filtered_folders) {
+for (folder in folders) {
   # Define the specific file path for EUR data
   prs_single_dir <- file.path(folder, "prs-single_EUR/quantify/EUR_quantify_var_explained.txt")
   
@@ -54,14 +50,12 @@ head(merged_data)
 
 merged_data <- merged_data %>%
   mutate(
-    Ancestry = str_extract(Phenotype, "AFR|AMR"),  # Extract AFR or AMR
-    Phenotype = str_remove(Phenotype, "_single"),  # Remove "_single"
-    Phenotype = str_remove(Phenotype, "^(AFR|AMR)_")  # Remove "AFR_" or "AMR_" from the start
+    Phenotype = str_remove(Phenotype, "^(EUR)_")  # Remove "AFR_" or "AMR_" from the start
   )
 
 # Add Significant column
 merged_data <- merged_data %>%
-  mutate(Significant = !(`2.5` <= 0 & `97.5` >= 0))
+  mutate(Significant = !(`2.5%` <= 0 & `97.5%` >= 0))
 
 merged_data$Phenotype <- gsub("\\bED\\b", "Anorexia Nervosa", merged_data$Phenotype)
 merged_data$Phenotype <- gsub("\\bGI\\b", "Gastrointestinal Disease", merged_data$Phenotype)
