@@ -61,6 +61,8 @@ merged_data$Phenotype <- gsub("\\bED\\b", "Anorexia Nervosa", merged_data$Phenot
 merged_data$Phenotype <- gsub("\\bGI\\b", "Gastrointestinal Disease", merged_data$Phenotype)
 merged_data$Phenotype <- gsub("\\bIM\\b", "Immune System Disease", merged_data$Phenotype)
 merged_data$Phenotype <- gsub("\\bMS\\b", "Musculoskeletal System Disease", merged_data$Phenotype)
+merged_data$Phenotype <- gsub("\\bPT\\b", "Preterm Birth 1", merged_data$Phenotype)
+merged_data$Phenotype <- gsub("\\bPT_EXT\\b", "Preterm Birth 2", merged_data$Phenotype)
 
 # Display the first few rows to check the new column
 head(merged_data)
